@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Protect the Pine — a biocontrol timing game</title>
+<meta name="description" content="A two-minute browser game: time beneficial microbes to protect pine seedlings from root-rot spores. Based on a systematic review of microbial co-inoculation in conifers.">
+<meta property="og:title" content="Protect the Pine — a biocontrol timing game">
+<meta property="og:description" content="Can you get beneficial microbes onto the roots before the spores land? A two-minute game based on a systematic review of 20 studies.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,600;7..72,700&family=Nunito+Sans:wght@400;600;700;800&family=Geist+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf6ef; --surface-low:#f0eae0; --surface:#e8e0d2; --surface-high:#ddd3c2;
+  --ink:#2a302b; --ink-soft:#4a524b; --ink-faint:#6d746e;
+  --primary:#366948; --primary-dark:#24402f; --primary-soft:#d8efe0; --on-primary-soft:#1f4d30;
+  --amber:#8f5822; --amber-soft:#f2d4a7; --on-amber-soft:#6e3f0c;
+  --red:#b83230; --red-soft:#f9dedc; --on-red-soft:#7a1c1a;
+  --leaf:#3f7d52; --leaf-weak:#b38b3c; --leaf-lost:#a19c90;
+  --trunk:#7a5536; --soil:#d9c7a7; --soil-dark:#c4ad88; --root:#8a6646; --glow:#56c27f;
+  --serif:'Literata', Georgia, serif; --sans:'Nunito Sans', system-ui, sans-serif; --mono:'Geist Mono', ui-monospace, monospace;
+  --r:.625rem; --r-lg:1rem; --r-full:999px;
+  --shadow:0 4px 20px rgb(42 48 43 / .07);
+}
+*,*::before,*::after{box-sizing:border-box;}
+[hidden]{display:none !important;}
+html{-webkit-text-size-adjust:100%;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:1rem;line-height:1.6;-webkit-font-smoothing:antialiased;}
+button{font:inherit;color:inherit;}
+a{color:var(--primary);}
+.shell{max-width:820px;margin:0 auto;padding:0 1rem 2rem;min-height:100vh;display:flex;flex-direction:column;}
+
+/* top bar */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:1rem 0 .75rem;flex-wrap:wrap;}
+.brand{display:flex;align-items:center;gap:.5rem;font-family:var(--serif);font-weight:700;font-size:1.15rem;}
+.brand svg{width:22px;height:22px;}
+.hud{display:flex;gap:.5rem;flex-wrap:wrap;}
+.hud[hidden]{display:none;}
+.hud-item{display:flex;align-items:center;gap:.4rem;background:var(--surface-low);border-radius:var(--r-full);padding:.3rem .75rem;}
+.hud-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);}
+.hud-val{font-family:var(--mono);font-weight:600;font-size:.9rem;}
+.doses{display:flex;gap:4px;align-items:center;}
+.dose{width:10px;height:16px;border-radius:3px 3px 5px 5px;background:var(--glow);border:1.5px solid var(--primary);}
+.dose.used{background:transparent;border-color:var(--surface-high);}
+
+/* screens */
+main{flex:1;}
+.screen{display:none;}
+.screen.active{display:block;animation:fadeIn .25s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+.kicker{font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--amber);margin:0 0 .5rem;}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(2.1rem,1.4rem + 3vw,3.2rem);line-height:1.08;margin:0 0 .9rem;letter-spacing:-.02em;}
+h2{font-family:var(--serif);font-weight:700;font-size:clamp(1.5rem,1.2rem + 1.4vw,2.1rem);line-height:1.15;margin:0 0 .6rem;letter-spacing:-.01em;}
+h3{font-family:var(--serif);font-weight:600;font-size:1.15rem;margin:0 0 .4rem;}
+.lede{font-size:1.1rem;color:var(--ink-soft);max-width:60ch;margin:0 0 1.5rem;}
+.card{background:var(--surface-low);border-radius:var(--r-lg);padding:1.25rem 1.4rem;margin-bottom:1rem;}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:.75rem;}
+.steps li{display:flex;gap:.8rem;align-items:flex-start;}
+.steps .n{flex:0 0 auto;width:1.8rem;height:1.8rem;border-radius:50%;background:var(--primary);color:#fff;font-family:var(--mono);font-weight:600;font-size:.85rem;display:grid;place-items:center;margin-top:.1rem;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border:0;border-radius:var(--r-full);padding:.85rem 1.5rem;font-weight:800;font-size:1rem;cursor:pointer;text-decoration:none;transition:transform .12s ease, background .15s ease;}
+.btn:active{transform:scale(.97);}
+.btn.primary{background:var(--primary);color:#fff;box-shadow:var(--shadow);}
+.btn.primary:hover{background:var(--primary-dark);}
+.btn.ghost{background:var(--surface);color:var(--ink);}
+.btn.ghost:hover{background:var(--surface-high);}
+.btn:focus-visible,.tree:focus-visible{outline:3px solid var(--amber);outline-offset:3px;}
+.row{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;margin-top:1.25rem;}
+.pill{display:inline-block;font-size:.75rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:.25rem .7rem;border-radius:var(--r-full);background:var(--amber-soft);color:var(--on-amber-soft);}
+.newidea{background:var(--primary-soft);color:var(--on-primary-soft);border-radius:var(--r-lg);padding:1rem 1.2rem;font-weight:700;margin:1rem 0 0;}
+
+/* play */
+.season{display:flex;align-items:center;gap:.75rem;margin:.25rem 0 .75rem;}
+.season-bar{flex:1;height:8px;border-radius:var(--r-full);background:var(--surface);overflow:hidden;}
+.season-fill{height:100%;width:0;background:linear-gradient(90deg,var(--primary),var(--glow));border-radius:inherit;}
+.season-lbl{font-family:var(--mono);font-size:.8rem;color:var(--ink-faint);white-space:nowrap;}
+.msg{min-height:3.2rem;background:var(--surface-low);border-radius:var(--r);padding:.65rem .9rem;font-weight:600;color:var(--ink-soft);margin-bottom:.9rem;display:flex;align-items:center;}
+.msg.warn{background:var(--amber-soft);color:var(--on-amber-soft);}
+.msg.bad{background:var(--red-soft);color:var(--on-red-soft);}
+.msg.good{background:var(--primary-soft);color:var(--on-primary-soft);}
+.bed{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:.75rem;}
+
+.tree{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:.15rem;background:linear-gradient(#f6f2ea 0%,#efe8dc 100%);border:2px solid transparent;border-radius:var(--r-lg);padding:2.1rem .45rem .6rem;cursor:pointer;text-align:center;transition:border-color .15s ease, transform .12s ease;-webkit-tap-highlight-color:transparent;}
+.tree:hover{border-color:var(--surface-high);}
+.tree:active{transform:scale(.98);}
+.tree.warned{border-color:var(--amber);animation:pulse 1s ease-in-out infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgb(143 88 34 / .0);}50%{box-shadow:0 0 0 6px rgb(143 88 34 / .18);}}
+.tree.hit-anim{animation:shake .45s ease;}
+@keyframes shake{0%,100%{transform:none;}20%{transform:translateX(-5px) rotate(-1deg);}40%{transform:translateX(5px) rotate(1deg);}60%{transform:translateX(-3px);}80%{transform:translateX(3px);}}
+.tree svg{width:100%;height:auto;display:block;}
+.tree-name{font-family:var(--mono);font-size:.75rem;font-weight:600;color:var(--ink-faint);}
+.tree-status{font-size:.82rem;font-weight:800;line-height:1.25;min-height:2.05em;color:var(--ink-soft);}
+.tree.s-protected .tree-status{color:var(--primary);}
+.tree.s-held .tree-status{color:var(--primary);}
+.tree.s-weak .tree-status{color:var(--amber);}
+.tree.s-lost .tree-status{color:var(--red);}
+.colbar{height:6px;border-radius:var(--r-full);background:var(--surface);overflow:hidden;margin:.2rem .3rem 0;}
+.colfill{height:100%;width:0;background:var(--glow);border-radius:inherit;transition:width .2s linear;}
+.threat{position:absolute;top:.45rem;left:.45rem;right:.45rem;display:flex;align-items:center;justify-content:center;gap:.35rem;background:var(--amber-soft);color:var(--on-amber-soft);border-radius:var(--r-full);padding:.15rem .4rem;font-size:.72rem;font-weight:800;}
+.threat[hidden]{display:none;}
+.spores{display:inline-flex;gap:2px;}
+.spores i{display:block;width:5px;height:5px;border-radius:50%;background:var(--amber);animation:drift 1.2s ease-in-out infinite;}
+.spores i:nth-child(2){animation-delay:.2s;}.spores i:nth-child(3){animation-delay:.4s;}
+@keyframes drift{0%,100%{transform:translateY(-2px);opacity:.6;}50%{transform:translateY(2px);opacity:1;}}
+.risk{position:absolute;top:.45rem;right:.45rem;font-size:.66rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#3f6d80;background:#dbe9ef;border-radius:var(--r-full);padding:.12rem .45rem;}
+.tree.warned .risk{display:none;}
+.pop{position:absolute;left:50%;top:30%;transform:translateX(-50%);background:#fff;border-radius:var(--r-full);padding:.1rem .55rem;box-shadow:0 2px 8px rgb(42 48 43 / .18);font-family:var(--mono);font-weight:600;font-size:1rem;pointer-events:none;opacity:0;white-space:nowrap;}
+.pop.show{animation:popUp 1.2s ease forwards;}
+.pop.good{color:var(--primary);}.pop.bad{color:var(--red);}.pop.mid{color:var(--amber);}
+@keyframes popUp{0%{opacity:0;transform:translate(-50%,8px);}15%{opacity:1;}75%{opacity:1;}100%{opacity:0;transform:translate(-50%,-22px);}}
+.controls{display:flex;gap:.75rem;flex-wrap:wrap;justify-content:center;margin:0 0 .9rem;}
+.legend{display:flex;flex-wrap:wrap;gap:.4rem 1.1rem;justify-content:center;margin-top:1rem;font-size:.8rem;color:var(--ink-faint);}
+.legend span{display:inline-flex;align-items:center;gap:.35rem;}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block;}
+
+/* debrief */
+.stars{font-size:2.4rem;letter-spacing:.15em;line-height:1;margin:.25rem 0 .75rem;color:var(--surface-high);}
+.stars .on{color:#d39b2a;}
+.tally{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.6rem;margin:1rem 0;}
+.tally div{background:var(--surface-low);border-radius:var(--r);padding:.7rem .9rem;}
+.tally b{display:block;font-family:var(--mono);font-size:1.5rem;font-weight:600;line-height:1.1;}
+.tally span{font-size:.82rem;color:var(--ink-faint);font-weight:700;}
+.lesson{background:var(--primary-soft);color:var(--on-primary-soft);border-radius:var(--r-lg);padding:1.25rem 1.4rem;}
+.lesson h3{color:var(--on-primary-soft);}
+.lesson p{margin:0;}
+details{margin-top:.9rem;background:rgb(255 255 255 / .55);border-radius:var(--r);padding:.6rem .9rem;}
+summary{cursor:pointer;font-weight:800;font-size:.88rem;}
+details p{margin:.5rem 0 .2rem !important;font-size:.92rem;line-height:1.55;}
+.didyou{background:var(--red-soft);color:var(--on-red-soft);border-radius:var(--r-lg);padding:1.1rem 1.3rem;margin-top:1rem;}
+.didyou p{margin:.3rem 0 0;}
+.takeaways{margin:.5rem 0 0;padding-left:1.2rem;}
+.takeaways li{margin-bottom:.4rem;}
+.cta{display:block;background:var(--primary);color:#fff;text-decoration:none;border-radius:var(--r-lg);padding:1.15rem 1.3rem;margin-top:1.25rem;box-shadow:var(--shadow);}
+.cta b{display:block;font-family:var(--serif);font-size:1.15rem;}
+.cta span{opacity:.9;font-size:.9rem;}
+.small{font-size:.85rem;color:var(--ink-faint);}
+
+footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid rgb(203 197 184 / .7);font-size:.8rem;color:var(--ink-faint);line-height:1.55;}
+footer p{margin:.3rem 0;}
+
+@media (max-width:520px){
+  .bed{grid-template-columns:repeat(3,1fr);gap:.5rem;}
+  .tree{padding:1.85rem .3rem .5rem;}
+  .tree svg{max-height:104px;width:auto;margin:0 auto;}
+  .tree-status{font-size:.74rem;}
+  .threat{font-size:.64rem;left:.25rem;right:.25rem;}
+  .risk{font-size:.58rem;right:.25rem;}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none !important;transition:none !important;}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <div class="brand" aria-label="Protect the Pine">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 6.5 9h3L5 15h4l-3.5 4.5h13L15 15h4l-4.5-6h3z" fill="#3f7d52"/><rect x="10.8" y="19" width="2.4" height="3.5" rx=".6" fill="#7a5536"/></svg>
+      Protect the Pine
+    </div>
+    <div class="hud" id="hud" hidden>
+      <div class="hud-item"><span class="hud-label">Level</span><span class="hud-val" id="hud-level">1/3</span></div>
+      <div class="hud-item"><span class="hud-label">Doses</span><span class="doses" id="hud-doses" aria-live="polite"></span></div>
+    </div>
+  </header>
+
+  <main>
+    <!-- TITLE -->
+    <section id="screen-title" class="screen active" aria-labelledby="t-title">
+      <p class="kicker">A two-minute game about biocontrol timing</p>
+      <h1 id="t-title">Protect the Pine</h1>
+      <p class="lede">Root-rot spores are drifting toward your pine seedlings. You have a few doses of beneficial microbes that can protect them — but only if the microbes settle on the roots in time.</p>
+      <div class="card">
+        <h3>How to play</h3>
+        <ol class="steps">
+          <li><span class="n">1</span><span><b>Tap a tree</b> to release beneficial microbes onto its roots. Each tree uses one dose, and doses are limited.</span></li>
+          <li><span class="n">2</span><span>The microbes need <b>about 7 days</b> to settle in. Protection grows as they do — watch the green bar.</span></li>
+          <li><span class="n">3</span><span><b>Watch for spores.</b> A warning shows which tree is targeted and how many days until they land.</span></li>
+        </ol>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="btn-play">Play</button>
+        <span class="small">3 short levels · works on phone and desktop</span>
+      </div>
+    </section>
+
+    <!-- BRIEF -->
+    <section id="screen-brief" class="screen" aria-labelledby="b-title">
+      <span class="pill" id="b-pill">Level 1 of 3</span>
+      <h2 id="b-title" style="margin-top:.6rem;">The Nursery Bed</h2>
+      <p class="lede" id="b-goal"></p>
+      <p class="newidea" id="b-idea"></p>
+      <div class="row"><button class="btn primary" id="btn-plan">Go to the nursery</button></div>
+    </section>
+
+    <!-- PLAY -->
+    <section id="screen-play" class="screen" aria-label="Game board">
+      <div class="season">
+        <span class="season-lbl" id="season-lbl">Day 0 / 16</span>
+        <div class="season-bar" aria-hidden="true"><div class="season-fill" id="season-fill"></div></div>
+      </div>
+      <div class="msg" id="msg" role="status" aria-live="polite"></div>
+      <div class="controls">
+        <button class="btn primary" id="btn-start">Start the season</button>
+        <button class="btn ghost" id="btn-pause" hidden>Pause</button>
+      </div>
+      <div class="bed" id="bed"></div>
+      <div class="legend" aria-hidden="true">
+        <span><i class="sw" style="background:var(--glow)"></i>Microbes settling</span>
+        <span><i class="sw" style="background:var(--amber)"></i>Spores incoming</span>
+        <span><i class="sw" style="background:#9fb7c4"></i>Damp patch = higher risk</span>
+      </div>
+    </section>
+
+    <!-- DEBRIEF -->
+    <section id="screen-debrief" class="screen" aria-labelledby="d-title">
+      <span class="pill" id="d-pill">Level 1 complete</span>
+      <h2 id="d-title" style="margin-top:.6rem;">Season over</h2>
+      <div class="stars" id="d-stars" aria-label=""></div>
+      <p id="d-score" style="margin:0;font-weight:700;"></p>
+      <div class="tally" id="d-tally"></div>
+      <div class="lesson">
+        <h3 id="d-lesson-title"></h3>
+        <p id="d-lesson-plain"></p>
+        <details><summary>For researchers: the evidence</summary><p id="d-lesson-expert"></p></details>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="btn-next">Next level</button>
+        <button class="btn ghost" id="btn-retry">Replay this level</button>
+      </div>
+    </section>
+
+    <!-- FINAL -->
+    <section id="screen-final" class="screen" aria-labelledby="f-title">
+      <p class="kicker">All three seasons done</p>
+      <h2 id="f-title">You earned <span id="f-stars">0</span> of 9 stars</h2>
+      <div class="stars" id="f-starrow"></div>
+      <div class="card">
+        <h3>What the game was really about</h3>
+        <ul class="takeaways">
+          <li><b>Timing decides it.</b> Beneficial microbes need a head start of about a week to settle on the roots and put the tree on alert.</li>
+          <li><b>Prevention beats reaction.</b> Once you can see the spores, it is usually too late to build protection.</li>
+          <li><b>It is promising, not proven.</b> All 20 studies behind this game were lab, greenhouse or nursery trials. Mature trees in real forests remain untested.</li>
+        </ul>
+      </div>
+      <div class="didyou">
+        <h3 style="color:var(--on-red-soft);">Did you know? The wrong microbe can backfire</h3>
+        <p>In Norway spruce, the bacterium <i>Streptomyces</i> sp. AcH 505 suppressed the tree's immunity while colonising. When challenged by a <i>Heterobasidion abietinum</i> strain 98% tolerant to its antibiotic, root infection actually <b>increased</b> (Lehr et al., 2007).</p>
+      </div>
+      <a class="cta" href="https://umi-max.github.io/microbial-coinoculation-conifers/">
+        <b>Explore the full interactive guide →</b>
+        <span>The review behind this game: concepts, a lab simulator, flashcards and a quiz.</span>
+      </a>
+      <div class="row">
+        <button class="btn primary" id="btn-again">Play again</button>
+        <button class="btn ghost" id="btn-share">Copy link to share</button>
+        <span class="small" id="share-msg" role="status" aria-live="polite"></span>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p><b>Game model, simplified.</b> Protection builds over 7 days of colonisation (the pre-inoculation window in Grönberg et al., 2009) up to a maximum of 74% less damage (the best suppression in the review, Yu et al., 2024). Those two findings come from different host–pathogen systems, and real outcomes vary with host, pathogen and microbes. Damp patches are a game mechanic, not a finding.</p>
+    <p>Based on a systematic review of microbial co-inoculation in conifers (Awan &amp; Iqbal) · <a href="https://umi-max.github.io/microbial-coinoculation-conifers/">Full interactive guide</a> · Hafiz U. M. Awan, forest pathology, University of Helsinki</p>
+  </footer>
+</div>
+
+<noscript><p style="text-align:center;padding:1rem;">This game needs JavaScript to run.</p></noscript>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ---------- model constants ---------- */
+  const qs = new URLSearchParams(location.search);
+  const SPEED = Math.min(40, Math.max(0.25, Number(qs.get('speed')) || 1)); // testing aid
+  const DAY_MS = 1000 / SPEED;
+  const FULL_LEAD = 7;       // days to full colonisation (Grönberg et al., 2009: 168 h)
+  const MAX_PROTECT = 0.74;  // best reported suppression (Yu et al., 2024)
+
+  const LEVELS = [
+    { name:'The Nursery Bed', trees:5, doses:3, days:16, threats:3, atRisk:0, riskBias:0,
+      landRisk:[8,13], landOther:[8,13], warnRisk:[7,9], warnOther:[7,9],
+      goal:'Spores give you about a week of warning here. Watch for them and protect each targeted tree in time.',
+      idea:'Tap a tree to release microbes. They need about 7 days to settle in, so act as soon as a warning appears.',
+      lesson:{ title:'A head start wins',
+        plain:'Beneficial microbes need time to settle on the roots and put the tree’s defences on alert. Give them about a week before the pathogen arrives and they can hold it off.',
+        expert:'In Scots pine, pre-inoculating harmless binucleate <i>Rhizoctonia</i> (BNR) 168 hours (7 days) before pathogenic uninucleate <i>Rhizoctonia</i> (UNR) suppressed pathogen DNA, whereas simultaneous inoculation let the pathogen win root sites (Grönberg et al., 2009).' } },
+    { name:'Late Season', trees:5, doses:3, days:15, threats:3, atRisk:3, riskBias:0.85,
+      landRisk:[7,13], landOther:[7,13], warnRisk:[2,3], warnOther:[2,3],
+      goal:'Spores now give only 2–3 days of warning — far too short to react. Damp patches mark the trees most likely to be hit.',
+      idea:'Time is frozen until you start. Protect the at-risk trees now, before the season begins.',
+      lesson:{ title:'Prevention beats reaction',
+        plain:'By the time you can see the spores coming, it is usually too late. The microbes protect the tree by putting it on alert in advance, so that protection has to be in place before the attack.',
+        expert:'Beneficial microbes establish defence priming: an alert “ready-but-restrained” state where defences trigger faster and broader only when a pathogen attacks, preserving seedling growth. The review identifies prophylactic timing as the first condition for co-inoculation to outperform single agents: the beneficial microbe must arrive ahead of the pathogen to colonise root tissues and alert host defences.' } },
+    { name:'Mixed Weather', trees:6, doses:4, days:18, threats:4, atRisk:2, riskBias:0.85,
+      landRisk:[7,11], landOther:[10,16], warnRisk:[2,3], warnOther:[7,8],
+      goal:'Some warnings are long, some short. Cover the at-risk trees early, and save doses for the long warnings you can still react to.',
+      idea:'Read each warning: plan ahead where you must, react where you can.',
+      lesson:{ title:'Promising — but untested in real forests',
+        plain:'The best lab result in the review — 74% less disease — came from pairing a fungus with a bacterium. But every one of the 20 studies was done in a lab, greenhouse or nursery. None tested mature trees in a real forest.',
+        expert:'A consortium of the fungus <i>Trichoderma longibrachiatum</i> (strain 3Y) and the rhizobacterium <i>Burkholderia stabilis</i> (strain K29) reduced <i>Fusarium oxysporum</i> damping-off severity in <i>Pinus massoniana</i> by 74%, beating either single microbe (Yu et al., 2024). All reviewed evidence came from lab, greenhouse or nursery-proximate trials — mature trees remain untested (0 of 20 exclusive field trials).' } }
+  ];
+
+  /* ---------- helpers ---------- */
+  const $ = (s, r = document) => r.querySelector(s);
+  const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const shuffle = arr => { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage blocked */ } }
+  };
+  const protectionFor = lead => lead <= 0 ? 0 : MAX_PROTECT * Math.min(1, lead / FULL_LEAD);
+  const starsFor = pct => pct >= 0.80 ? 3 : pct >= 0.65 ? 2 : pct >= 0.50 ? 1 : 0;
+
+  /* ---------- state ---------- */
+  let G = null, levelIdx = 0, raf = 0, lastT = 0;
+  let runStars = [0, 0, 0];
+
+  function buildLevel(i) {
+    const cfg = LEVELS[i];
+    const trees = Array.from({ length: cfg.trees }, (_, k) => ({ k, atRisk: false, inoc: null, hit: false, health: 100, lead: null }));
+    shuffle([...trees.keys()]).slice(0, cfg.atRisk).forEach(k => { trees[k].atRisk = true; });
+    const used = new Set(), threats = [];
+    for (let n = 0; n < cfg.threats; n++) {
+      const riskPool = trees.filter(t => t.atRisk && !used.has(t.k)).map(t => t.k);
+      const otherPool = trees.filter(t => !t.atRisk && !used.has(t.k)).map(t => t.k);
+      const useRisk = riskPool.length && (Math.random() < cfg.riskBias || !otherPool.length);
+      const k = useRisk ? pick(riskPool) : pick(otherPool.length ? otherPool : riskPool);
+      used.add(k);
+      const atRisk = trees[k].atRisk;
+      const land = randInt(...(atRisk ? cfg.landRisk : cfg.landOther));
+      const warn = Math.min(land, randInt(...(atRisk ? cfg.warnRisk : cfg.warnOther)));
+      threats.push({ k, land: Math.min(land, cfg.days - 1), warn, from: Math.max(0, land - warn), done: false });
+    }
+    threats.sort((a, b) => a.land - b.land);
+    return { cfg, idx: i, trees, threats, day: 0, doses: cfg.doses, running: false, paused: false, over: false };
+  }
+
+  /* ---------- screens ---------- */
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+    $('#hud').hidden = id !== 'screen-play';
+    window.scrollTo(0, 0);
+  }
+
+  function openBrief(i) {
+    levelIdx = i;
+    const cfg = LEVELS[i];
+    $('#b-pill').textContent = `Level ${i + 1} of ${LEVELS.length}`;
+    $('#b-title').textContent = cfg.name;
+    $('#b-goal').textContent = cfg.goal;
+    $('#b-idea').textContent = cfg.idea;
+    show('screen-brief');
+    $('#btn-plan').focus();
+  }
+
+  function startLevel(i) {
+    stopLoop();
+    G = buildLevel(i);
+    $('#hud-level').textContent = `${i + 1}/${LEVELS.length}`;
+    renderBed();
+    $('#btn-start').hidden = false;
+    $('#btn-pause').hidden = true;
+    $('#btn-pause').textContent = 'Pause';
+    setMsg('Planning — time is frozen. Tap trees to protect them in advance, then start the season.');
+    render();
+    show('screen-play');
+  }
+
+  /* ---------- board ---------- */
+  function treeSVG(t) {
+    return `<svg viewBox="0 0 100 168" aria-hidden="true">
+      <rect x="0" y="118" width="100" height="50" fill="var(--soil)"/>
+      <rect x="0" y="118" width="100" height="3" fill="var(--soil-dark)"/>
+      ${t.atRisk ? '<ellipse cx="50" cy="146" rx="40" ry="14" fill="#9fb7c4" opacity=".55"/>' : ''}
+      <g class="glow" fill="none" stroke="var(--glow)" stroke-width="7" stroke-linecap="round" opacity="0">
+        <path d="M50 120 L50 156 M50 128 C40 134 32 140 22 152 M50 128 C60 134 68 140 78 152 M50 140 C44 146 39 152 34 162 M50 140 C56 146 61 152 66 162"/>
+      </g>
+      <g fill="none" stroke="var(--root)" stroke-width="2.4" stroke-linecap="round">
+        <path d="M50 120 L50 156 M50 128 C40 134 32 140 22 152 M50 128 C60 134 68 140 78 152 M50 140 C44 146 39 152 34 162 M50 140 C56 146 61 152 66 162"/>
+      </g>
+      <rect x="46" y="92" width="8" height="28" rx="2" fill="var(--trunk)"/>
+      <g class="foliage" fill="var(--leaf)">
+        <polygon points="50,52 14,98 86,98"/>
+        <polygon points="50,32 22,74 78,74"/>
+        <polygon points="50,12 30,50 70,50"/>
+      </g>
+    </svg>`;
+  }
+
+  function renderBed() {
+    const bed = $('#bed');
+    bed.innerHTML = '';
+    G.trees.forEach(t => {
+      const b = document.createElement('button');
+      b.className = 'tree';
+      b.type = 'button';
+      b.dataset.k = t.k;
+      b.innerHTML = `
+        <span class="threat" hidden><span class="spores"><i></i><i></i><i></i></span><span class="threat-txt"></span></span>
+        ${t.atRisk ? '<span class="risk">At risk</span>' : ''}
+        ${treeSVG(t)}
+        <span class="tree-name">Tree ${t.k + 1}</span>
+        <span class="tree-status"></span>
+        <span class="colbar"><span class="colfill"></span></span>
+        <span class="pop"></span>`;
+      b.addEventListener('click', () => inoculate(t.k));
+      bed.appendChild(b);
+    });
+  }
+
+  function colonisation(t) {
+    if (t.inoc === null) return 0;
+    if (t.hit) return clamp(t.lead / FULL_LEAD, 0, 1);
+    return clamp((G.day - t.inoc) / FULL_LEAD, 0, 1);
+  }
+
+  function render() {
+    if (!G) return;
+    const cfg = G.cfg;
+    const d = Math.min(G.day, cfg.days);
+    $('#season-lbl').textContent = `Day ${Math.floor(d)} / ${cfg.days}`;
+    $('#season-fill').style.width = `${(d / cfg.days) * 100}%`;
+    const dz = $('#hud-doses');
+    if (dz.childElementCount !== cfg.doses) dz.innerHTML = Array.from({ length: cfg.doses }, () => '<i class="dose"></i>').join('');
+    [...dz.children].forEach((el, n) => el.classList.toggle('used', n >= G.doses));
+    dz.setAttribute('aria-label', `${G.doses} of ${cfg.doses} doses left`);
+
+    const cards = $('#bed').children;
+    G.trees.forEach(t => {
+      const card = cards[t.k];
+      const c = colonisation(t);
+      const th = G.threats.find(x => x.k === t.k && !x.done && d >= x.from);
+      let status, cls;
+      if (t.hit) {
+        if (t.health >= 60) { status = `Held off · ${Math.round(t.lead >= FULL_LEAD ? MAX_PROTECT * 100 : protectionFor(t.lead) * 100)}% protected`; cls = 's-held'; }
+        else if (t.health >= 25) { status = 'Weakened'; cls = 's-weak'; }
+        else { status = 'Lost'; cls = 's-lost'; }
+      } else if (t.inoc !== null) {
+        status = c >= 1 ? 'Fully protected' : `Settling in · ${Math.round(c * 100)}%`; cls = 's-protected';
+      } else {
+        status = t.atRisk ? 'Unprotected · at risk' : 'Unprotected'; cls = '';
+      }
+      card.className = `tree ${cls}${th ? ' warned' : ''}${card.classList.contains('hit-anim') ? ' hit-anim' : ''}`;
+      const st = card.querySelector('.tree-status');
+      if (st.textContent !== status) st.textContent = status;
+      card.querySelector('.colfill').style.width = `${c * 100}%`;
+      card.querySelector('.glow').setAttribute('opacity', (c * 0.85).toFixed(2));
+      const leaf = !t.hit ? 'var(--leaf)' : t.health >= 60 ? 'var(--leaf)' : t.health >= 25 ? 'var(--leaf-weak)' : 'var(--leaf-lost)';
+      card.querySelector('.foliage').setAttribute('fill', leaf);
+      const tb = card.querySelector('.threat');
+      if (th) {
+        const left = Math.max(0, Math.ceil(th.land - d));
+        tb.hidden = false;
+        const txt = left <= 0 ? 'Landing!' : `Spores in ${left}d`;
+        const el = tb.querySelector('.threat-txt');
+        if (el.textContent !== txt) el.textContent = txt;
+      } else tb.hidden = true;
+      const warnTxt = th ? `, warning: spores land in ${Math.max(0, Math.ceil(th.land - d))} days` : '';
+      card.setAttribute('aria-label', `Tree ${t.k + 1}${t.atRisk ? ', at risk' : ''}, ${status}${warnTxt}`);
+      card.setAttribute('aria-disabled', String(t.inoc !== null || t.hit || G.doses <= 0 || G.over));
+    });
+  }
+
+  function setMsg(text, tone = '') {
+    const m = $('#msg');
+    m.textContent = text;
+    m.className = `msg${tone ? ' ' + tone : ''}`;
+  }
+
+  /* ---------- actions ---------- */
+  function inoculate(k) {
+    if (!G || G.over) return;
+    const t = G.trees[k];
+    if (t.hit) return setMsg(`Too late for Tree ${k + 1} — the spores have already landed.`, 'bad');
+    if (t.inoc !== null) return setMsg(`Tree ${k + 1} already has microbes settling in.`);
+    if (G.doses <= 0) return setMsg('No doses left this season. Choose carefully next time!', 'warn');
+    t.inoc = G.day;
+    G.doses -= 1;
+    const th = G.threats.find(x => x.k === k && !x.done);
+    if (G.running && th && G.day >= th.from) {
+      const lead = th.land - G.day;
+      setMsg(lead >= FULL_LEAD
+        ? `Microbes released on Tree ${k + 1} with ${Math.ceil(lead)} days to spare — enough time to settle in.`
+        : `Microbes released on Tree ${k + 1}, but only ${Math.max(0, Math.ceil(lead))} days before the spores land. Partial protection at best.`,
+        lead >= FULL_LEAD ? 'good' : 'warn');
+    } else {
+      setMsg(`Microbes released on Tree ${k + 1}. ${G.doses} dose${G.doses === 1 ? '' : 's'} left.`, 'good');
+    }
+    render();
+  }
+
+  function resolveThreat(th) {
+    const t = G.trees[th.k];
+    t.lead = t.inoc === null ? 0 : th.land - t.inoc;
+    const prot = protectionFor(t.lead);
+    const dmg = Math.round(100 * (1 - prot));
+    t.health = Math.max(0, 100 - dmg);
+    t.hit = true;
+    th.done = true;
+    const card = $('#bed').children[th.k];
+    card.classList.remove('hit-anim'); void card.offsetWidth; card.classList.add('hit-anim');
+    setTimeout(() => card.classList.remove('hit-anim'), 500);
+    const pop = card.querySelector('.pop');
+    pop.className = 'pop';
+    void pop.offsetWidth;
+    if (t.health >= 60) { pop.textContent = `−${dmg}`; pop.classList.add('show', 'good'); setMsg(`Spores hit Tree ${th.k + 1} — the settled microbes held them off.`, 'good'); }
+    else if (t.health >= 25) { pop.textContent = `−${dmg}`; pop.classList.add('show', 'mid'); setMsg(`Spores hit Tree ${th.k + 1}. The microbes had too little time — it survives, weakened.`, 'warn'); }
+    else { pop.textContent = 'Lost'; pop.classList.add('show', 'bad'); setMsg(t.inoc === null ? `Spores hit unprotected Tree ${th.k + 1}. It is lost.` : `Spores hit Tree ${th.k + 1} before the microbes could settle. It is lost.`, 'bad'); }
+  }
+
+  /* ---------- loop ---------- */
+  function loop(ts) {
+    if (!G || G.over) return;
+    if (!lastT) lastT = ts;
+    const dt = Math.min(120, ts - lastT);
+    lastT = ts;
+    if (G.running && !G.paused) {
+      G.day += dt / DAY_MS;
+      for (const th of G.threats) if (!th.done && G.day >= th.land) resolveThreat(th);
+      if (G.day >= G.cfg.days) { G.day = G.cfg.days; render(); endLevel(); return; }
+    }
+    render();
+    raf = requestAnimationFrame(loop);
+  }
+  function startLoop() { stopLoop(); lastT = 0; raf = requestAnimationFrame(loop); }
+  function stopLoop() { if (raf) cancelAnimationFrame(raf); raf = 0; }
+
+  function startSeason() {
+    if (!G || G.running) return;
+    G.running = true;
+    $('#btn-start').hidden = true;
+    $('#btn-pause').hidden = false;
+    setMsg('The season has started. Watch for spore warnings.');
+    startLoop();
+  }
+  function togglePause(force) {
+    if (!G || !G.running || G.over) return;
+    G.paused = typeof force === 'boolean' ? force : !G.paused;
+    $('#btn-pause').textContent = G.paused ? 'Resume' : 'Pause';
+    if (G.paused) setMsg('Paused. You can still tap trees.');
+  }
+
+  /* ---------- debrief ---------- */
+  function endLevel() {
+    G.over = true;
+    stopLoop();
+    const cfg = G.cfg;
+    const total = G.trees.reduce((s, t) => s + t.health, 0);
+    const pct = total / (cfg.trees * 100);
+    const stars = starsFor(pct);
+    runStars[G.idx] = stars;
+    const best = store.get('ptp-best', [0, 0, 0]);
+    best[G.idx] = Math.max(best[G.idx] || 0, stars);
+    store.set('ptp-best', best);
+
+    const untouched = G.trees.filter(t => !t.hit).length;
+    const held = G.trees.filter(t => t.hit && t.health >= 60).length;
+    const weak = G.trees.filter(t => t.hit && t.health >= 25 && t.health < 60).length;
+    const lost = G.trees.filter(t => t.hit && t.health < 25).length;
+
+    $('#d-pill').textContent = `Level ${G.idx + 1} complete`;
+    $('#d-title').textContent = stars === 3 ? 'Excellent season' : stars === 2 ? 'Good season' : stars === 1 ? 'A rough season' : 'A hard season';
+    $('#d-stars').innerHTML = [0, 1, 2].map(n => `<span class="${n < stars ? 'on' : ''}">★</span>`).join('');
+    $('#d-stars').setAttribute('aria-label', `${stars} of 3 stars`);
+    $('#d-score').textContent = `Nursery health: ${Math.round(pct * 100)}%`;
+    $('#d-tally').innerHTML = `
+      <div><b>${held}</b><span>Attacked, held off</span></div>
+      <div><b>${weak}</b><span>Weakened</span></div>
+      <div><b>${lost}</b><span>Lost</span></div>
+      <div><b>${untouched}</b><span>Never attacked</span></div>`;
+    $('#d-lesson-title').textContent = cfg.lesson.title;
+    $('#d-lesson-plain').textContent = cfg.lesson.plain;
+    $('#d-lesson-expert').innerHTML = cfg.lesson.expert;
+    $('#btn-next').textContent = G.idx < LEVELS.length - 1 ? 'Next level' : 'See your results';
+    setTimeout(() => { show('screen-debrief'); $('#btn-next').focus(); }, 700);
+  }
+
+  function openFinal() {
+    const sum = runStars.reduce((a, b) => a + b, 0);
+    $('#f-stars').textContent = sum;
+    $('#f-starrow').innerHTML = Array.from({ length: 9 }, (_, n) => `<span class="${n < sum ? 'on' : ''}">★</span>`).join('');
+    $('#f-starrow').setAttribute('aria-label', `${sum} of 9 stars`);
+    $('#share-msg').textContent = '';
+    show('screen-final');
+  }
+
+  /* ---------- wiring ---------- */
+  $('#btn-play').addEventListener('click', () => { runStars = [0, 0, 0]; openBrief(0); });
+  $('#btn-plan').addEventListener('click', () => startLevel(levelIdx));
+  $('#btn-start').addEventListener('click', startSeason);
+  $('#btn-pause').addEventListener('click', () => togglePause());
+  $('#btn-retry').addEventListener('click', () => openBrief(levelIdx));
+  $('#btn-next').addEventListener('click', () => { if (levelIdx < LEVELS.length - 1) openBrief(levelIdx + 1); else openFinal(); });
+  $('#btn-again').addEventListener('click', () => { runStars = [0, 0, 0]; openBrief(0); });
+  $('#btn-share').addEventListener('click', async () => {
+    const url = location.href.split(/[?#]/)[0];
+    try { await navigator.clipboard.writeText(url); $('#share-msg').textContent = 'Link copied!'; }
+    catch (e) { $('#share-msg').textContent = url; }
+  });
+
+  document.addEventListener('keydown', e => {
+    if (!$('#screen-play').classList.contains('active') || !G) return;
+    if (e.key >= '1' && e.key <= '9') { const k = Number(e.key) - 1; if (k < G.trees.length) { e.preventDefault(); inoculate(k); } }
+    else if ((e.key === 'p' || e.key === 'P') && G.running) { e.preventDefault(); togglePause(); }
+    else if ((e.key === 's' || e.key === 'S') && !G.running) { e.preventDefault(); startSeason(); }
+  });
+  document.addEventListener('visibilitychange', () => { if (document.hidden && G && G.running && !G.over) togglePause(true); });
+
+  // read-only hook for automated testing
+  window.__ptp = { get state() { return G; }, protectionFor, starsFor, LEVELS, startLevel, startSeason, inoculate };
+})();
+</script>
+</body>
+</html>
