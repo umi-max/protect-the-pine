@@ -14,7 +14,11 @@ It opens with a guided practice round, then two short levels. The pine has three
 
 ## The science behind it
 
-The game is based on a systematic review of microbial co-inoculation in conifers (Awan & Iqbal), which screened 430 records and included 20 primary studies. Full interactive guide:
+The game is based on the systematic review:
+
+> Hafiz Umair Masood Awan, Mudassir Iqbal: Microbial co-inoculation for biological control of seedling diseases in conifers: A systematic review of defence mechanisms and host transcriptomic responses (2026) https://doi.org/10.1016/j.pmpp.2026.103432
+
+The review screened 430 records and included 20 primary studies. Full interactive guide:
 https://umi-max.github.io/microbial-coinoculation-conifers/
 
 The core idea — helpers must be established before the pathogen arrives — reflects Grönberg et al. (2009): in Scots pine, pre-inoculating harmless *Rhizoctonia* 168 hours (7 days) before the pathogen suppressed it, whereas simultaneous inoculation let the pathogen win root sites.
@@ -28,4 +32,4 @@ The core idea — helpers must be established before the pathogen arrives — re
 
 ## Author
 
-Hafiz U. M. Awan — forest pathology, University of Helsinki.
+Game created by Hafiz Umair Masood Awan.
